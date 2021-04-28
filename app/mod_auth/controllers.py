@@ -1,32 +1,46 @@
 from flask import Blueprint, request
 from app import db
-from app.mod_auth.models import Dispatcher
+from app.mod_auth.models import User
 
 mod_auth = Blueprint('auth', __name__, url_prefix='/auth')
 
 
 @mod_auth.route('/')
 def index():
-  return {"dispatchers": [i.as_dict() for i in Dispatcher.query.all()]}
+  return {
+    "users": [i.as_dict() for i in User.query.all()],
+  }
 
 
-@mod_auth.route('/dispatcher/<int:id>', methods=['GET', 'POST', 'PUT', 'DELETE'])
+@mod_auth.route('/user', methods=['POST'])
+def create_user():
+  data = request.get_json()
+  user = User(
+    full_name=data['full_name'],
+    phone_number=data['phone_number'],
+  )
+  db.session.add(user)
+  db.session.commit()
+  return user.as_dict()
+
+
+@mod_auth.route('/user/<int:id>', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def dispatcher(id=None):
-  dispatcher = Dispatcher.query.get_or_404(id)
+  user = User.query.get_or_404(id)
 
   if request.method == 'GET':
-    return {"item": dispatcher.as_dict()}
+    return {"item": user.as_dict()}
 
   elif request.method == 'PUT':
     data = request.get_json()
-    dispatcher.full_name = data['full_name']
-    dispatcher.phone_number = data['phone_number']
-    db.session.add(dispatcher)
+    user.full_name = data['full_name']
+    user.phone_number = data['phone_number']
+    db.session.add(user)
     db.session.commit()
-    return {"item": dispatcher.as_dict()}
+    return {"item": user.as_dict()}
 
   elif request.method == 'DELETE':
-    db.session.delete(dispatcher)
+    db.session.delete(user)
     db.session.commit()
 
   return {"status": "ok"}
